@@ -2,7 +2,7 @@
 #include "airSensor.h";
 #include "mqttClient.h";
 
-AirSensor mySensor((uint8_t)15, (uint8_t)16, (uint8_t)17);
+AirSensor mySensor((uint8_t)15, (uint8_t)16, Serial1);
 MqttClient myNetwork("P 201", "", "broker.hivemq.com");
 
 unsigned long lastTime = 0;
