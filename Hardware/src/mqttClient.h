@@ -2,18 +2,17 @@
 #define MQTT_CLIENT_H
 
 #include <Arduino.h>
-#include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
 class MqttClient {
 private:
-    // Lưu trữ thông tin mạng
     const char* ssid;
     const char* password;
     const char* broker;
     
     // Object của thư viện mạng
-    WiFiClient espClient;
+    WiFiClientSecure espClient;
     PubSubClient client;
 
     // Hàm ẩn nội bộ: Tự động kết nối lại nếu rớt mạng

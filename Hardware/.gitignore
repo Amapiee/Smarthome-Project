@@ -3,3 +3,13 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+*.log
+*.bin
+*.elf
+*.map
+*.hex
+*.o
+*.d
+*.a
+*.lnk
+*.s 

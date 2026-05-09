@@ -24,13 +24,13 @@ void MqttClient::connect() {
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
 
-    // Thiết lập địa chỉ MQTT Broker và cổng mặc định (1883)
-    client.setServer(broker, 1883);
+    espClient.setInsecure();
+    // Thiết lập địa chỉ MQTT Broker và cổng mặc định (8883)
+    client.setServer(broker, 8883);
 }
 
 // 3. Hàm nội bộ (Private): Xử lý kết nối lại khi rớt mạng
 void MqttClient::reconnect() {
-    // Lặp cho đến khi kết nối lại được với Broker
     while (!client.connected()) {
         Serial.print("Dang ket noi lai MQTT Broker...");
         
@@ -47,14 +47,13 @@ void MqttClient::reconnect() {
             Serial.print(" That bai, ma loi: ");
             Serial.print(client.state());
             Serial.println(" Thu lai sau 5 giay...");
-            delay(5000); // Đợi 5 giây trước khi thử lại để tránh bị treo ESP32
+            delay(5000); 
         }
     }
 }
 
 // 4. Hàm duy trì kết nối (Gọi liên tục trong loop() của main.cpp)
 void MqttClient::keepAlive() {
-    // Nếu rớt mạng thì tự động nối lại
     if (!client.connected()) {
         reconnect();
     }
@@ -73,7 +72,6 @@ void MqttClient::publishData(float temp, float hum, int pm25) {
     // Khởi tạo Document JSON (Cú pháp của ArduinoJson phiên bản 7)
     JsonDocument doc; 
 
-    // Gắn dữ liệu vào các key (Giống hệt tạo Object trong JS)
     doc["temperature"] = temp;
     doc["humidity"] = hum;
     doc["pm25"] = pm25;
@@ -82,7 +80,6 @@ void MqttClient::publishData(float temp, float hum, int pm25) {
     char jsonBuffer[512];
     serializeJson(doc, jsonBuffer);
 
-    // Gửi chuỗi dữ liệu lên topic "smarthome/sensors/air"
     Serial.print("Gui du lieu len HiveMQ: ");
     Serial.println(jsonBuffer);
     

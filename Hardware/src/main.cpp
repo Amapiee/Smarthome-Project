@@ -1,9 +1,9 @@
-#include <Arduino.h>;
-#include "airSensor.h";
-#include "mqttClient.h";
+#include <Arduino.h>
+#include "airSensor.h"
+#include "mqttClient.h"
 
-AirSensor mySensor((uint8_t)15, (uint8_t)16, Serial1);
-MqttClient myNetwork("P 201", "", "broker.hivemq.com");
+AirSensor mySensor((uint8_t)15, (uint8_t)16, (uint8_t)17, Serial1);
+MqttClient myNetwork("P 201", "66668888", "broker.hivemq.com");
 
 unsigned long lastTime = 0;
 
