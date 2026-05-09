@@ -1,2 +1,17 @@
 node_modules
 .env
+dist
+coverage
+logs
+*.log
+.DS_Store
+.idea
+.vscode
+*.env
+*.env.local
+*.env.development
+*.env.test
+*.env.production
+*.pem
+*.key
+*.crt
