@@ -1,13 +1,19 @@
-const express = require('express');
-const connectDB = require('./config/server'); 
 require('dotenv').config();
 
+const express = require('express');
+const connectDB = require('./config/server'); 
+const mqttClient = require('./services/mqttServices');
+
+
 const app = express();
-
-// Kết nối Database
-connectDB();
-
 app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server chạy tại cổng ${PORT}`));
+// Kết nối Database
+async function startServer() {
+  await connectDB();
+  
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () =>
+     console.log(`Server run on port ${PORT}`));
+}
+startServer();
