@@ -15,3 +15,4 @@ logs
 *.pem
 *.key
 *.crt
+build/

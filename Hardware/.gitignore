@@ -13,3 +13,8 @@
 *.a
 *.lnk
 *.s 
+
+.vscode/
+
+.pio/
+.device-settings.ini

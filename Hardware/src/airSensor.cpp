@@ -16,9 +16,8 @@ void AirSensor::begin() {
 
 SensorData AirSensor::readAll() {
     SensorData data;
-    data.isValid = true; 
+    data.isValid = true;
 
-    // --- Đọc DHT22 ---
     data.temperature = dht.readTemperature();
     data.humidity = dht.readHumidity();
     data.co2 = mq135.readCO2();

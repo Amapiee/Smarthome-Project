@@ -1,4 +1,7 @@
 const mqtt = require('mqtt');
+const AirQuality = require('../model/airdata.model');
+
+// Demo: {"temperature": 25, "humidity": 60, "pm25": 12, "co2": 400}
 
 console.log('Connecting to:', process.env.HIVE_MQTT_URL);
 
@@ -29,6 +32,9 @@ client.on('message', (topic, message) => {
         // Biến message là Buffer, cần toString() và parse JSON
         const data = JSON.parse(message.toString());
         console.log("Data received from ESP32:", data);
+        const airQuality = new AirQuality(data);
+        airQuality.save()
+            .catch((error) => console.error('Error saving air quality data:', error));
     } catch (error) {
         console.error('Error processing MQTT message:', error);
     }
