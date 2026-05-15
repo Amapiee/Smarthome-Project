@@ -3,27 +3,35 @@
 
 #include <Arduino.h>
 #include <DHT.h>
-#include <PMS.h>
+#include <MQ135.h>
 
-// Đóng gói dữ liệu trả về (Giống Object trong JS)
+#pragma once
+enum DangerLevel{
+    SAFE,
+    MODERATE,
+    DANGEROUS,
+    EXTREME
+};
+
 struct SensorData {
     float temperature;
     float humidity;
     float co2;
     int pm25;
-    bool isValid; // Báo hiệu đọc dữ liệu thành công hay thất bại
+    DangerLevel dangerLevel;
+    bool isValid;
 };
 
 class AirSensor {
 private:
     DHT dht;
-    PMS pms;
     MQ135 mq135;
-    HardwareSerial& pmsSerial; // Con trỏ tham chiếu đến cổng Serial của ESP32
+    uint8_t GP2YledPin;
+    uint8_t GP2YmeasurePin;
 
 public:
     // Constructor: Khởi tạo chân cắm khi tạo Object
-    AirSensor(uint8_t dhtPin, uint8_t dhtType, uint8_t mq135Pin, HardwareSerial& serial);
+    AirSensor(uint8_t dhtPin, uint8_t dhtType, uint8_t mq135Pin, uint8_t gp2YledPin, uint8_t gp2YmeasurePin);
     
     // Các phương thức public
     void begin();

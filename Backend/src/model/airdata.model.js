@@ -5,6 +5,7 @@ const AirQualitySchema = new mongoose.Schema({
     humidity: { type: Number, default: 0 },
     pm25: { type: Number, required: true },
     co2 : { type: Number, required: true },
+    dangerLevel: { type: String, required: true, default: 'SAFE'}, 
     timestamp: { type: Date, default: Date.now } 
 });
 

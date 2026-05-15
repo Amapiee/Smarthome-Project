@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
+#include "airSensor.h"
 
 class MqttClient {
 private:
@@ -26,8 +27,11 @@ public:
     void connect();
     void keepAlive();
     
+    // Hàm cấu hình callback để nhận tín hiệu điều khiển
+    void setCallback(MQTT_CALLBACK_SIGNATURE);
+    
     // Hàm nhận dữ liệu để đóng gói JSON và gửi đi
-    void publishData(float temp, float hum, int pm25);
+    void publishData(float temp, float hum, int pm25, float co2, DangerLevel dangerLevel);
 };
 
 #endif

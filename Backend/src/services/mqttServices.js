@@ -1,7 +1,7 @@
 const mqtt = require('mqtt');
 const AirQuality = require('../model/airdata.model');
 
-// Demo: {"temperature": 25, "humidity": 60, "pm25": 12, "co2": 400}
+// Demo: {"temperature": 25, "humidity": 60, "pm25": 12, "co2": 400, "dangerLevel": 1}
 
 console.log('Connecting to:', process.env.HIVE_MQTT_URL);
 
@@ -27,16 +27,27 @@ client.on('error', (error) => {
     console.error('Error occurred with MQTT client:', error);
 });
 
-client.on('message', (topic, message) => {
+client.on('message', async (topic, message) => {
     try {
-        // Biến message là Buffer, cần toString() và parse JSON
-        const data = JSON.parse(message.toString());
-        console.log("Data received from ESP32:", data);
-        const airQuality = new AirQuality(data);
-        airQuality.save()
-            .catch((error) => console.error('Error saving air quality data:', error));
+        const payload = message.toString();
+        const rawData = JSON.parse(payload);
+        
+        const levelMap = ['SAFE', 'MODERATE', 'DANGEROUS', 'EXTREME'];
+        const stringDangerLevel = levelMap[rawData.dangerLevel] || 'SAFE';
+
+        const airQuality = new AirQuality({
+            temperature: rawData.temperature,
+            humidity:    rawData.humidity,
+            pm25:        rawData.pm25,
+            co2:         rawData.co2,
+            dangerLevel: stringDangerLevel,
+        });
+
+        const savedData = await airQuality.save();
+
     } catch (error) {
-        console.error('Error processing MQTT message:', error);
+        // Bắt mọi lỗi từ JSON parse, Validation cho đến DB connection
+        console.error('[MQTT Error] Failed to process message:', error.message);
     }
 });
 

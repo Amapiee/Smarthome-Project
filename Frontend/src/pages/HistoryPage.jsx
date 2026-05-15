@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { getSensorHistory } from '../services/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Calendar, ArrowLeft, Download } from 'lucide-react';
+import { Calendar, ArrowLeft, Download, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import HistoryTableBody from '../components/HistoryTableBody';
 
 const HistoryPage = () => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchHistory = async () => {
-            const data = await getSensorHistory(50);
-            setHistory(data);
+    const fetchHistory = async () => {
+        setLoading(true);
+        try {
+            const newData = await getSensorHistory(25);
+            setHistory(newData.data || []);
+            console.log("after update", history);
+        } catch (error) {
+            console.error("Failed to fetch data in History Page:", error);
+        } finally {
             setLoading(false);
-        };
+        }
+    };
+
+    useEffect(() => {
         fetchHistory();
     }, []);
 
@@ -26,25 +35,18 @@ const HistoryPage = () => {
                 <h1 className="text-2xl font-bold flex items-center">
                     <Calendar className="mr-2" /> Sensor Data History
                 </h1>
-                <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center text-sm hover:cursor-pointer hover:bg-green-700 transition-colors select-none tap-highlight-transparent">
-                    <Download size={16} className="mr-2" /> Export CSV
-                </button>
-            </div>
-
-            {/* Biểu đồ diễn biến */}
-            <div className="bg-white p-6 rounded-xl shadow-md mb-8 border border-gray-100 select-none tap-highlight-transparent">
-                <h2 className="text-lg font-semibold mb-4 select-none">PM2.5 charts & Temperature</h2>
-                <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={history}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="time" />
-                            <YAxis />
-                            <Tooltip />
-                            <Line type="monotone" dataKey="pm25" stroke="#ef4444" name="PM2.5" />
-                            <Line type="monotone" dataKey="temperature" stroke="#3b82f6" name="Temperature" />
-                        </LineChart>
-                    </ResponsiveContainer>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={fetchHistory}
+                        disabled={loading}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center text-sm hover:cursor-pointer hover:bg-blue-700 transition-colors select-none tap-highlight-transparent disabled:opacity-50"
+                    >
+                        <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> 
+                        Refresh
+                    </button>
+                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center text-sm hover:cursor-pointer hover:bg-green-700 transition-colors select-none tap-highlight-transparent">
+                        <Download size={16} className="mr-2" /> Export CSV
+                    </button>
                 </div>
             </div>
 
@@ -53,26 +55,14 @@ const HistoryPage = () => {
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="p-4 border-b">Time</th>
-                            <th className="p-4 border-b">PM2.5 (µg/m³)</th>
-                            <th className="p-4 border-b">Temperature (°C)</th>
-                            <th className="p-4 border-b">Humidity (%)</th>
+                            <th className="p-4 border-b select-none">Time</th>
+                            <th className="p-4 border-b select-none">PM2.5 (µg/m³)</th>
+                            <th className="p-4 border-b select-none">Temperature (°C)</th>
+                            <th className="p-4 border-b select-none">Humidity (%)</th>
+                            <th className="p-4 border-b select-none">TVOC (ppm)</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan="4" className="p-10 text-center">Loading data...</td></tr>
-                        ) : (
-                            history.map((record, index) => (
-                                <tr key={index} className="hover:bg-gray-50 border-b">
-                                    <td className="p-4">{new Date(record.createdAt).toLocaleString()}</td>
-                                    <td className="p-4 font-semibold text-red-600">{record.pm25}</td>
-                                    <td className="p-4">{record.temperature}</td>
-                                    <td className="p-4">{record.humidity}</td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
+                    <HistoryTableBody loading={loading} history={history} />
                 </table>
             </div>
         </div>

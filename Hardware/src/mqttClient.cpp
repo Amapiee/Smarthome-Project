@@ -1,5 +1,20 @@
 #include "mqttClient.h"
-#include <ArduinoJson.h> // Thư viện xử lý JSON
+#include <ArduinoJson.h> 
+
+const char* getDangerLevelString(DangerLevel level) {
+    switch(level) {
+        case SAFE: 
+            return "SAFE";
+        case MODERATE: 
+            return "MODERATE";
+        case DANGEROUS: 
+            return "DANGEROUS";
+        case EXTREME: 
+            return "EXTREME";
+        default: 
+            return "UNKNOWN";
+    }
+}
 
 // 1. Constructor: Gắn cấu hình mạng và khởi tạo PubSubClient
 MqttClient::MqttClient(const char* wifiSsid, const char* wifiPass, const char* mqttBroker) 
@@ -25,7 +40,6 @@ void MqttClient::connect() {
     Serial.println(WiFi.localIP());
 
     espClient.setInsecure();
-    // Thiết lập địa chỉ MQTT Broker và cổng mặc định (8883)
     client.setServer(broker, 8883);
 }
 
@@ -41,8 +55,7 @@ void MqttClient::reconnect() {
         // Thử kết nối
         if (client.connect(clientId.c_str())) {
             Serial.println(" Thanh cong!");
-            // Nếu bạn làm thêm tính năng điều khiển thiết bị (VD: bật tắt quạt), 
-            // bạn sẽ gọi client.subscribe("topic/dieu-khien") ở ngay đây.
+            client.subscribe("smarthome/devices/fan");
         } else {
             Serial.print(" That bai, ma loi: ");
             Serial.print(client.state());
@@ -51,7 +64,6 @@ void MqttClient::reconnect() {
         }
     }
 }
-
 // 4. Hàm duy trì kết nối (Gọi liên tục trong loop() của main.cpp)
 void MqttClient::keepAlive() {
     if (!client.connected()) {
@@ -61,9 +73,13 @@ void MqttClient::keepAlive() {
     client.loop(); 
 }
 
+// Cấu hình hàm callback
+void MqttClient::setCallback(MQTT_CALLBACK_SIGNATURE) {
+    client.setCallback(callback);
+}
+
 // 5. Hàm đóng gói và Publish dữ liệu
-void MqttClient::publishData(float temp, float hum, int pm25) {
-    // Không gửi nếu đang rớt mạng
+void MqttClient::publishData(float temp, float hum, int pm25, float co2, DangerLevel dangerLevel) {
     if (!client.connected()) {
         Serial.println("MQTT ngat ket noi, khong the gui du lieu!");
         return;
@@ -75,14 +91,15 @@ void MqttClient::publishData(float temp, float hum, int pm25) {
     doc["temperature"] = temp;
     doc["humidity"] = hum;
     doc["pm25"] = pm25;
-
+    doc["co2"] = co2;
+    doc["dangerLevel"] = getDangerLevelString(dangerLevel);
     // Chuyển đối tượng JSON thành chuỗi ký tự (Stringify)
     char jsonBuffer[512];
     serializeJson(doc, jsonBuffer);
 
     Serial.print("Gui du lieu len HiveMQ: ");
     Serial.println(jsonBuffer);
-    
+
     // Publish dữ liệu
     client.publish("smarthome/sensors/air", jsonBuffer);
 }
