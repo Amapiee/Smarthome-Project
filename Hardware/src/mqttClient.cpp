@@ -1,105 +1,117 @@
 #include "mqttClient.h"
-#include <ArduinoJson.h> 
+#include <ArduinoJson.h> // Hỗ trợ đóng gói gói tin JSON
 
-const char* getDangerLevelString(DangerLevel level) {
-    switch(level) {
-        case SAFE: 
-            return "SAFE";
-        case MODERATE: 
-            return "MODERATE";
-        case DANGEROUS: 
-            return "DANGEROUS";
-        case EXTREME: 
-            return "EXTREME";
-        default: 
-            return "UNKNOWN";
-    }
+// Constructor: Khởi tạo thông tin và liên kết các đối tượng lớp mạng
+MqttClient::MqttClient(const char* wifiSsid, const char* wifiPass, const char* mqttBroker) {
+    ssid = wifiSsid;
+    password = wifiPass;
+    broker = mqttBroker;
+    
+    // Liên kết khối Wifi bảo mật vào Client MQTT
+    client.setClient(espClient);
 }
 
-// 1. Constructor: Gắn cấu hình mạng và khởi tạo PubSubClient
-MqttClient::MqttClient(const char* wifiSsid, const char* wifiPass, const char* mqttBroker) 
-    : ssid(wifiSsid), password(wifiPass), broker(mqttBroker), client(espClient) {
-    // client(espClient) cực kỳ quan trọng: Nó báo cho thư viện MQTT biết 
-    // phải dùng module WiFi nào của ESP32 để kết nối Internet.
-}
-
-// 2. Hàm kết nối WiFi và thiết lập Broker
 void MqttClient::connect() {
-    Serial.print("Dang ket noi WiFi: ");
+    espClient.setInsecure(); // Bỏ qua xác thực SSL (nếu dùng MQTTs) - Lưu ý: Chỉ nên dùng trong môi trường phát triển
+    // 1. Tiến hành kết nối WiFi
+    Serial.println();
+    Serial.print("Chuan bi ket noi den mang: ");
     Serial.println(ssid);
     
-    // Bắt đầu kết nối WiFi
     WiFi.begin(ssid, password);
+    
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
     }
     
-    Serial.println("\nWiFi da ket noi thanh cong!");
-    Serial.print("IP Address: ");
+    Serial.println("");
+    Serial.println("-> WiFi da duoc ket noi thanh cong!");
+    Serial.print("-> Dia chi IP cua ESP32: ");
     Serial.println(WiFi.localIP());
 
-    espClient.setInsecure();
+    // 2. Cấu hình máy chủ MQTT Broker 
     client.setServer(broker, 8883);
+    
+    // 3. Thực hiện kích hoạt luồng kết nối vào Broker
+    reconnect();
 }
 
-// 3. Hàm nội bộ (Private): Xử lý kết nối lại khi rớt mạng
+// Hàm xử lý kết nối lại ngầm khi bị mất liên lạc
 void MqttClient::reconnect() {
+    // Vòng lặp giữ chân cho đến khi kết nối thành công broker
     while (!client.connected()) {
-        Serial.print("Dang ket noi lai MQTT Broker...");
+        Serial.print("Dang thu ket noi den MQTT Broker...");
         
-        // Tạo một ID ngẫu nhiên cho client để tránh đụng độ trên Broker
-        String clientId = "ESP32Client-";
-        clientId += String(random(0xffff), HEX);
-
-        // Thử kết nối
-        if (client.connect(clientId.c_str())) {
-            Serial.println(" Thanh cong!");
-            client.subscribe("smarthome/devices/fan");
+        // Tạo một Client ID ngẫu nhiên để tránh xung đột trên Broker đám mây
+        String clientId = "ESP32-SmartHome-";
+        clientId += String(random(0, 9999));
+        
+        // Thực hiện lệnh kết nối của thư viện PubSubClient
+        if (client.connect(clientId.c_str(), "NhatHuy", "Huyminh0609")) {
+            Serial.println("thanh cong!");
+            client.subscribe("smarthome/device/fan");
+            Serial.println("-> Da Subscribe vao topic: smarthome/device/fan");
         } else {
-            Serial.print(" That bai, ma loi: ");
+            Serial.print("that bai, ma loi rc = ");
             Serial.print(client.state());
-            Serial.println(" Thu lai sau 5 giay...");
-            delay(5000); 
+            Serial.println(". Thu lai sau 5 giay...");
+            delay(5000);
         }
     }
 }
-// 4. Hàm duy trì kết nối (Gọi liên tục trong loop() của main.cpp)
+
+// Duy trì trạng thái kết nối ổn định trong vòng lặp chính
 void MqttClient::keepAlive() {
-    if (!client.connected()) {
+    // 1. Kiểm tra trạng thái kết nối WiFi trước
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("-> [Network Error] Mat ket noi WiFi! Dang cho ket noi lai...");
+        return; 
+    }
+
+    // 2. Kiểm tra trạng thái MQTT Client
+    if (!client.connected() || client.state() != 0) {
+        Serial.print("-> [MQTT Warning] Phat hien ket noi ao (State: ");
+        Serial.print(client.state());
+        Serial.println("). Tien hanh reconnect...");
+        
         reconnect();
     }
-    // Hàm bắt buộc của PubSubClient để lắng nghe và gửi các gói tin liên tục
     client.loop(); 
 }
 
-// Cấu hình hàm callback
+// Đăng ký hàm xử lý sự kiện (Callback) khi có gói tin điều khiển đổ về
 void MqttClient::setCallback(MQTT_CALLBACK_SIGNATURE) {
     client.setCallback(callback);
 }
 
-// 5. Hàm đóng gói và Publish dữ liệu
+// Đóng gói dữ liệu cấu trúc thành chuỗi JSON và Publish lên Cloud
 void MqttClient::publishData(float temp, float hum, int pm25, float co2, DangerLevel dangerLevel) {
-    if (!client.connected()) {
-        Serial.println("MQTT ngat ket noi, khong the gui du lieu!");
-        return;
-    }
+    if (!client.connected()) return;
 
-    // Khởi tạo Document JSON (Cú pháp của ArduinoJson phiên bản 7)
-    JsonDocument doc; 
-
+    // Sử dụng ArduinoJson v7 để cấp phát động gói tin
+    JsonDocument doc;
+    
+    // Ánh xạ dữ liệu thô vào các trường JSON tương ứng
     doc["temperature"] = temp;
     doc["humidity"] = hum;
     doc["pm25"] = pm25;
     doc["co2"] = co2;
-    doc["dangerLevel"] = getDangerLevelString(dangerLevel);
-    // Chuyển đối tượng JSON thành chuỗi ký tự (Stringify)
-    char jsonBuffer[512];
-    serializeJson(doc, jsonBuffer);
+    
+    // Ép kiểu enum DangerLevel thành số nguyên (int) để truyền đi an toàn qua chuỗi
+    doc["dangerLevel"] = (int)dangerLevel;
 
-    Serial.print("Gui du lieu len HiveMQ: ");
-    Serial.println(jsonBuffer);
+    // Tiến hành tuần tự hóa (Serialization) tạo chuỗi ký tự JSON
+    char buffer[256];
+    serializeJson(doc, buffer);
 
-    // Publish dữ liệu
-    client.publish("smarthome/sensors/air", jsonBuffer);
+    // Tiến hành phát tán dữ liệu lên Topic quy định
+    bool result = client.publish("smarthome/sensor/air", buffer);
+    
+    if (result) {
+        Serial.print("-> [MQTT Publish] Gui tin nhan thanh cong: ");
+        Serial.println(buffer);
+    } else {
+        Serial.println("-> [MQTT Error] Gui tin nhan that bai!");
+    }
 }

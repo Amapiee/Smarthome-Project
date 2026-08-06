@@ -3,8 +3,10 @@
 
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
+#include <Wifi.h>
 #include <PubSubClient.h>
 #include "airSensor.h"
+#include "actuator.h"
 
 class MqttClient {
 private:

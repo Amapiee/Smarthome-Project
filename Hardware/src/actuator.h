@@ -2,16 +2,12 @@
 #define ALERTSYSTEM_H
 
 #include <Arduino.h>
-#include <Adafruit_NeoPixel.h>
-#include "mqttClient.h" 
+#include "airSensor.h" 
 
 class AlertSystem {
 private:
     uint8_t buzzerPin;
     uint8_t relayPin;
-    uint8_t ledPin;
-    
-    Adafruit_NeoPixel pixels;
     
     // Các biến dùng cho thuật toán Non-blocking nháy đèn/còi
     unsigned long previousMillis;
@@ -20,7 +16,7 @@ private:
 
 public:
     // Constructor khởi tạo chân cắm
-    AlertSystem(uint8_t buzz, uint8_t relay, uint8_t led);
+    AlertSystem(uint8_t buzz, uint8_t relay);
     
     void begin();
     

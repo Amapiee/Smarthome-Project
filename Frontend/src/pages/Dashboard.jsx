@@ -11,15 +11,26 @@ const SmartHomeDashboard = () => {
     temperature: 0,
     humidity: 0,
     pm25: 0,
-    tvoc: 0,
+    co2: 0,
     dangerLevel: "SAFE",       
   });
   const [chartData, setChartData] = useState([]);
-  
+
   const initChart = async () => {
     try {
-      const data = await getChartData();
-      setChartData(data.data);
+      const data = await getChartData(20);
+      console.log("Initial chart data fetched in Dashboard:", data.data);
+
+      const formattedData = data.data.map(element => ({
+        time:       new Date(element.timestamp).toLocaleTimeString(),
+        temperature:     element.temperature,
+        humidity:   element.humidity,
+        pm25:       element.pm25,
+        co2:       element.co2,
+      }));
+      setChartData(formattedData);
+
+      setCurrentData(prev => ({ ...prev, ...data.data[0] }));
     } catch (error) {
       console.error('Error initializing chart:', error);
     }
@@ -29,7 +40,7 @@ const SmartHomeDashboard = () => {
     try {
       const response = await getLatestData();
       const newData = response.data;
-      console.log("Latest sensor data fetched in Dashboard:", newData);
+      // console.log("Latest sensor data fetched in Dashboard:", newData);
 
       setCurrentData(prev => ({ ...prev, ...newData }));   
       
@@ -39,8 +50,9 @@ const SmartHomeDashboard = () => {
           temperature:     newData.temperature,
           humidity:   newData.humidity,
           pm25:       newData.pm25,
-          tvoc:       newData.co2,
+          co2:       newData.co2,
         }];
+        console.log()
         if (updated.length > 20) updated.shift();
         return updated;
       });
@@ -69,7 +81,6 @@ const SmartHomeDashboard = () => {
     return () => clearInterval(interval);
   }, []);
   
-  console.log("Current AQI data in Dashboard:", currentData);
   const danger = useMemo(() => {
   return getDangerLevelConfig(currentData.dangerLevel);
 }, [currentData.dangerLevel]);
@@ -121,7 +132,7 @@ const SmartHomeDashboard = () => {
                 : "⚠️ Chất lượng không khí NGUY HIỂM — Hạn chế ra ngoài!"}
             </p>
             <p className="text-sm text-gray-500">
-              PM2.5: {currentData.pm25} µg/m³ · TVOC: {currentData.tvoc} ppm
+              PM2.5: {currentData.pm25} µg/m³ · co2: {currentData.co2} ppm
             </p>
           </div>
         </div>
@@ -152,7 +163,7 @@ const SmartHomeDashboard = () => {
         />
         <StatCard
           title="TVOC"
-          value={currentData.tvoc}
+          value={currentData.co2}
           unit="ppm"
           icon={Biohazard}
           dangerConfig={danger}
@@ -160,7 +171,7 @@ const SmartHomeDashboard = () => {
       </div>
 
       {/* ── Biểu đồ ───────────────────────────────────────────── */}
-      {/* ── Biểu đồ 1: Chất lượng không khí (PM2.5 & TVOC) ──────────────────────── */}
+      {/* ── Biểu đồ 1: Chất lượng không khí (PM2.5 & co2) ──────────────────────── */}
 <div className={`bg-white rounded-xl shadow-md p-6 border transition-colors duration-700 ${danger.border} mb-6`}>
   <h2 className="text-xl font-bold text-gray-800 mb-4 select-none">
     Biến động Chất lượng không khí
@@ -171,7 +182,7 @@ const SmartHomeDashboard = () => {
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
         <XAxis dataKey="time" stroke="#6b7280" />
         
-        {/* Trục Y trái cho PM2.5, Trục Y phải cho TVOC */}
+        {/* Trục Y trái cho PM2.5, Trục Y phải cho co2 */}
         <YAxis
         yAxisId="left"
         stroke="#6b7280"
@@ -184,8 +195,8 @@ const SmartHomeDashboard = () => {
         <Legend />
         
         <Line yAxisId="left" type="monotone" dataKey="pm25" name="PM2.5 (µg/m³)" stroke={danger.dot || "#f59e0b"} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-        {/* Đảm bảo trong biến chartData của bạn có trường "tvoc" */}
-        <Line yAxisId="right" type="monotone" dataKey="tvoc" name="TVOC (ppm)" stroke="#edb228" strokeWidth={2} dot={{ r: 4 }} />
+        {/* Đảm bảo trong biến chartData của bạn có trường "co2" */}
+        <Line yAxisId="right" type="monotone" dataKey="co2" name="TVOC (ppm)" stroke="#edb228" strokeWidth={2} dot={{ r: 4 }} />
       </LineChart>
     </ResponsiveContainer>
   </div>

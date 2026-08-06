@@ -19,7 +19,7 @@ export const setFanState = async (isOn) => {
   }
 };
 
-export const setFanSpeed = async (speed) => {
+export const setFanSpeedAPI = async (speed) => {
   try {
     const response = await fetch(`${BACKEND_URL}/fan-speed`, {
       method: 'POST',
@@ -35,3 +35,21 @@ export const setFanSpeed = async (speed) => {
     throw error;
   }
 };
+
+export const setAutoFanAPI = async () => {
+  try{
+    const response = await fetch(`${BACKEND_URL}/auto-fan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ command: 'AUTO' })
+    });
+    if (!response.ok) throw new Error("Error setting auto fan mode in API call:" + response.statusText);
+    return await response.json();
+    
+  }catch(err){
+    console.error("Network Error:", err);
+    throw err;
+  }
+}

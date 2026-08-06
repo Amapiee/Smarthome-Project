@@ -9,7 +9,7 @@ const getLatestData = async (req, res) => {
             data: latestData
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -18,7 +18,7 @@ const getDangerLevel = async (req, res) => {
         const data = await AirQuality.findOne().
         sort({ timestamp: -1 }).select('-_id dangerLevel');
         if(!data){
-            res.status(404).json({ success: false, message: 'No data found' });
+            return res.status(404).json({ success: false, message: 'No data found' });
         }
 
         res.status(200).json({
@@ -27,7 +27,7 @@ const getDangerLevel = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -43,7 +43,7 @@ const getChartData = async (req, res) => {
         });
     } catch (error) {
         console.error("Error from getChartData:", error.message);
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
 }
 
@@ -56,7 +56,7 @@ const getHistoryData = async (req, res) => {
             data: historyData
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 

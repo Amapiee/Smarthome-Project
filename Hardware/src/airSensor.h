@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <DHT.h>
 #include <MQ135.h>
+#include <averageAlgorithm.h>
 
 #pragma once
 enum DangerLevel{
@@ -28,6 +29,8 @@ private:
     MQ135 mq135;
     uint8_t GP2YledPin;
     uint8_t GP2YmeasurePin;
+
+    MovingAverage<2> dustFilter; // Bộ lọc trung bình động cho nồng độ bụi mịn (PM2.5)
 
 public:
     // Constructor: Khởi tạo chân cắm khi tạo Object

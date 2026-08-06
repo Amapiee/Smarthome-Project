@@ -32,7 +32,6 @@ export const getChartData = async () => {
     try{
         const response = await api.get('/chart')
         return response.data;
-        console.log("Chart data fetched from API:", response.data);
     } catch (error) {
         console.error('Error fetching chart data in API call:', error);
         throw error;
@@ -42,7 +41,6 @@ export const getChartData = async () => {
 export const getSensorHistory = async (limit = 50) => {
     try{
         const response = await api.get('/history?limit=' + limit)
-        console.log("Sensor history fetched from API:", response.data);
         return response.data;
     } catch (error) {
         console.error('Error fetching sensor history in API call:', error);
